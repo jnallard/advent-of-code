@@ -109,41 +109,78 @@ What is the diagnostic code for system ID 5?
 """
 
 def compute_day():
-  print('calculating intcode...')
-  part_1_result = run_int_code(int_code)
+  print('calculating intcode TEST for value 1...')
+  part_1_result = run_int_code(int_code, 1)
+  print('diagnostic code: ', part_1_result)
 
-  part_2_result = None
+  print('calculating intcode TEST for value 5...')
+  part_2_result = run_int_code(int_code, 5)
+  print('diagnostic code: ', part_2_result)
   return [part_1_result, part_2_result]
 
-def run_int_code(code_string):
+def run_int_code(code_string, input_value):
   codes = [int(j) for j in code_string.split(',')]
   i = 0
+  last_output = None
   while i < len(codes):
     current_instruction = parse_instruction(codes[i])
     op_code = current_instruction['op_code']
     code_skip_count = 0
-    if op_code == 1:
+
+    if op_code == 1: # Add
       input_1 = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
       input_2 = get_value(codes, codes[i + 2], current_instruction['param_2_mode'])
       codes[codes[i + 3]] = input_1 + input_2
       code_skip_count = 4
-    if op_code == 2:
+
+    if op_code == 2: # Multiple
       input_1 = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
       input_2 = get_value(codes, codes[i + 2], current_instruction['param_2_mode'])
       codes[codes[i + 3]] = input_1 * input_2
       code_skip_count = 4
-    if op_code == 3:
-      input_value = int(input("Input: "))
+
+    if op_code == 3: # Input
+      print('Input:\t', input_value)
       codes[codes[i + 1]] = input_value
       code_skip_count = 2
-    if op_code == 4:
+
+    if op_code == 4: # Output
       value = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
-      print('\t', value)
+      print('Output:\t', value)
+      last_output = value
       code_skip_count = 2
+
+    if op_code == 5: # Jump if true
+      check_value = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
+      code_skip_count = 3
+      if check_value != 0:
+        code_skip_count = get_value(codes, codes[i + 2], current_instruction['param_2_mode']) - i
+
+    if op_code == 6: # Jump if false
+      check_value = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
+      code_skip_count = 3
+      if check_value == 0:
+        code_skip_count = get_value(codes, codes[i + 2], current_instruction['param_2_mode']) - i
+
+    if op_code == 7: # Less than
+      input_1 = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
+      input_2 = get_value(codes, codes[i + 2], current_instruction['param_2_mode'])
+      value = 1 if input_1 < input_2 else 0
+      codes[codes[i + 3]] = value
+      code_skip_count = 4
+
+    if op_code == 8: # Equals
+      input_1 = get_value(codes, codes[i + 1], current_instruction['param_1_mode'])
+      input_2 = get_value(codes, codes[i + 2], current_instruction['param_2_mode'])
+      value = 1 if input_1 == input_2 else 0
+      codes[codes[i + 3]] = value
+      code_skip_count = 4
+
     if op_code == 99:
       break
+
     i += code_skip_count
-  return codes[0]
+  return last_output
 
 
 def get_value(codes, key, param_mode):
@@ -155,7 +192,6 @@ def parse_instruction(instruction):
   param_1_mode = int(instruction[-3:-2] or '0')
   param_2_mode = int(instruction[-4:-3] or '0')
   param_3_mode = int(instruction[-5:-4] or '0')
-  print(op_code, param_1_mode, param_2_mode, param_3_mode)
   return {'op_code': op_code, 'param_1_mode': param_1_mode, 'param_2_mode': param_2_mode, 'param_3_mode': param_3_mode}
 
 example_1 = '3,0,4,0,99'
